@@ -5740,39 +5740,7 @@ renderDashboard = function() {
 };
 
 const _origRenderVendedores = renderVendedores;
-renderVendedores = function() {
-  const mes = mesActual();
-  document.getElementById("liq-mes").textContent = nomMes();
-  const colors = ["linear-gradient(135deg,var(--accent),var(--purple))","linear-gradient(135deg,var(--teal),var(--blue))"];
-  document.getElementById("vend-cards").innerHTML = db.vendedores.map((v,vi)=>{
-    const vtm = db.ventas.filter(vv=>vv.vendedorId===v.id&&vv.fecha.startsWith(mes));
-    const etm = (db.entregas||[]).filter(e=>{const venta=db.ventas.find(vv=>vv.id===e.ventaId);return venta&&venta.vendedorId===v.id&&e.estado==="entregada"&&(e.fechaEntrega||"").startsWith(mes);}).length;
-    const comV = vtm.length*(v.comision_venta||0); const comE = etm*(v.comision_entrega||0);
-    const total = comV+comE+(v.sueldo_fijo||0);
-    return `<div class="card" style="border-top:3px solid transparent;border-image:${colors[vi%2]} 1">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-        <div style="width:44px;height:44px;border-radius:12px;background:${colors[vi%2]};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff">${v.nombre.charAt(0)}</div>
-        <div><div style="font-weight:600;font-size:15px">${v.nombre}</div><div style="font-size:12px;color:var(--text2)">Vendedor</div></div>
-        <div style="margin-left:auto;text-align:right"><div style="font-size:22px;font-weight:700;color:var(--teal)">${fmtUSD(total)}</div><div style="font-size:11px;color:var(--text3)">este mes</div></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-        <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px;text-align:center"><div style="font-size:20px;font-weight:700">${vtm.length}</div><div style="font-size:11px;color:var(--text3)">ventas</div></div>
-        <div style="background:var(--bg3);border-radius:var(--r-sm);padding:10px;text-align:center"><div style="font-size:20px;font-weight:700">${etm}</div><div style="font-size:11px;color:var(--text3)">entregas</div></div>
-      </div>
-      <table style="width:100%;font-size:13px">
-        <tr><td style="color:var(--text2);padding:5px 0">Com. ventas</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(comV)}</td></tr>
-        <tr><td style="color:var(--text2);padding:5px 0">Com. entregas</td><td style="text-align:right;font-family:var(--mono)">${fmtUSD(comE)}</td></tr>
-        <tr><td style="color:var(--text2);padding:5px 0">Sueldo fijo</td><td style="text-align:right"><input type="number" value="${v.sueldo_fijo||0}" style="width:90px;text-align:right;font-family:var(--mono);font-size:13px;padding:3px 8px" onchange="setSueldo('${v.id}',this.value)"></td></tr>
-      </table>
-    </div>`;
-  }).join("");
-  document.getElementById("liquidacion-detail").innerHTML = db.vendedores.map(v=>{
-    const vtm = db.ventas.filter(vv=>vv.vendedorId===v.id&&vv.fecha.startsWith(mesActual()));
-    const etm = (db.entregas||[]).filter(e=>{const venta=db.ventas.find(vv=>vv.id===e.ventaId);return venta&&venta.vendedorId===v.id&&e.estado==="entregada"&&(e.fechaEntrega||"").startsWith(mesActual());}).length;
-    const total = vtm.length*(v.comision_venta||0)+etm*(v.comision_entrega||0)+(v.sueldo_fijo||0);
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-weight:500">${v.nombre}</span><span style="font-family:var(--mono);font-weight:700;color:var(--teal);font-size:15px">${fmtUSD(total)}</span></div>`;
-  }).join("");
-};
+// renderVendedores old override removed
 
 const _origRenderClientes = renderClientes;
 renderClientes = function(q="") {
