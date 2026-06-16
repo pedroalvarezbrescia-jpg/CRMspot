@@ -1861,11 +1861,13 @@ async function loadDB(){
       }
     } catch(_) {}
   }
+  db._loaded = true; // Mark as loaded so fetchDolar can save safely
   autoReplicarFijosAlCargar();
   renderAll();
   initAutoBackup();
   initLogin();
   startCloudSync();
+  fetchDolar(); // Fetch dolar AFTER data is loaded
 }
 async function saveDB(){
   sst("saving");
@@ -1882,9 +1884,20 @@ async function saveDB(){
 function sst(s){const m={"loading":"⟳","saving":"⟳","ok":"●","err":"!"};const el=document.getElementById("sync-status");if(el)el.textContent=m[s]||s;}
 
 async function fetchDolar(){
-  const el=document.getElementById("dolar-val");el.textContent="actualizando...";
-  try{const r=await fetch("https://dolarapi.com/v1/dolares/blue");const d=await r.json();db.dolar=((d.compra||1200)+(d.venta||1200))/2;db.dolar_venta=d.venta||1200;db.dolar_compra=d.compra||1200;el.innerHTML='Compra <b style="font-size:13px">$'+Math.round(db.dolar_compra)+'</b> · Venta <b style="font-size:13px">$'+Math.round(db.dolar_venta)+'</b>';await saveDB();autoReplicarFijosAlCargar();renderAll();initAutoBackup();}
-  catch(e){el.textContent="Blue: $"+Math.round(db.dolar||1200);}
+  const el=document.getElementById("dolar-val");
+  if(el) el.textContent="actualizando...";
+  try {
+    const r=await fetch("https://dolarapi.com/v1/dolares/blue");
+    const d=await r.json();
+    db.dolar=((d.compra||1200)+(d.venta||1200))/2;
+    db.dolar_venta=d.venta||1200;
+    db.dolar_compra=d.compra||1200;
+    if(el) el.innerHTML='Compra <b style="font-size:13px">$'+Math.round(db.dolar_compra)+'</b> · Venta <b style="font-size:13px">$'+Math.round(db.dolar_venta)+'</b>';
+    // Only save dolar value, don't trigger full saveDB unless db is loaded
+    if(db._loaded) await saveDB();
+  } catch(e){
+    if(el) el.textContent="Blue: $"+Math.round(db.dolar||1200);
+  }
 }
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
@@ -5683,9 +5696,8 @@ function renderAll(){
   if(activePage === "p-metricas") { try { renderMetricas(); } catch(e) {} }
 }
 
-loadDB();
-fetchDolar();
-setInterval(fetchDolar,30*60*1000);
+loadDB(); // fetchDolar is called inside loadDB after data is ready
+setInterval(fetchDolar,30*60*1000); // But still refresh every 30min
 
 
 // ===== OVERRIDES DE RENDER MEJORADOS =====
