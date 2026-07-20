@@ -1224,6 +1224,7 @@ select option{background:var(--bg3)}
     <div class="form-group span2"><label>Producto</label><input id="ev-prod" disabled style="opacity:.5"></div>
     <div class="form-group span2"><label>Cliente</label><input id="ev-cliente" disabled style="opacity:.5"></div>
     <div class="form-group"><label>Precio de venta (USD)</label><input type="number" id="ev-precio" placeholder="0"></div>
+    <div class="form-group"><label>Costo (USD)</label><input type="number" id="ev-costo" placeholder="0" step="0.01"></div>
     <div class="form-group"><label>Moneda recibida</label>
       <select id="ev-moneda"><option value="usd_billete">USD billete</option><option value="usd_mep">USD MEP</option><option value="ars">Pesos ARS</option><option value="cripto">Cripto</option></select>
     </div>
@@ -1639,9 +1640,16 @@ const SUPABASE_ROW_ID = "main";
 async function sbGet() {
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${SUPABASE_ROW_ID}&select=data`,
-    { headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY } }
+    { headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "Content-Type": "application/json"
+    }}
   );
-  if (!r.ok) throw new Error("Supabase GET error: " + r.status);
+  if (!r.ok) {
+    const txt = await r.text().catch(()=>"");
+    throw new Error("Supabase GET " + r.status + ": " + txt.slice(0,100));
+  }
   const rows = await r.json();
   return rows?.[0]?.data || null;
 }
@@ -1660,7 +1668,10 @@ async function sbSet(data) {
       body: JSON.stringify({ data, updated_at: new Date().toISOString() })
     }
   );
-  if (!r.ok) throw new Error("Supabase PATCH error: " + r.status);
+  if (!r.ok) {
+    const txt = await r.text().catch(()=>"");
+    throw new Error("Supabase PATCH " + r.status + ": " + txt.slice(0,100));
+  }
 }
 
 // ===== PAGINACIÓN ENGINE =====
@@ -1849,7 +1860,7 @@ async function loadDB(){
     }
     sst("ok");
   } catch(e) {
-    console.error("loadDB error:", e);
+    console.error("loadDB error:", e.message || e);
     sst("err");
     // Fallback to localStorage if Supabase fails
     try {
@@ -1857,7 +1868,9 @@ async function loadDB(){
       if (fallback) {
         db = Object.assign({}, db, JSON.parse(fallback));
         db = runMigrations(db);
-        mostrarToast("⚠️ Sin conexión — usando datos locales");
+        mostrarToast("⚠️ Sin conexión — usando datos locales. Error: " + (e.message||"").slice(0,60));
+      } else {
+        mostrarToast("⚠️ Error conectando a Supabase: " + (e.message||"").slice(0,60));
       }
     } catch(_) {}
   }
@@ -2147,6 +2160,7 @@ function renderStockPag(controls){
 function guardarVenta(){
   const clienteId=_vt_clienteId || document.getElementById("vt-cliente").value;
   const precio=parseFloat(document.getElementById("vt-precio").value)||0;
+  const costoManual=parseFloat(document.getElementById("vt-costo")?.value)||0;
   const vendedorId=document.getElementById("vt-vendedor").value;
   if(!clienteId)return alert("Selecciona un cliente");
   if(!precio)return alert("Ingresa el precio de venta");
@@ -4571,7 +4585,7 @@ initVentaModal = function() {
   _vt_clienteId = null;
   const inp = document.getElementById("vt-cliente-input");
   if (inp) inp.value = "";
-  ["vt-otro-color","vt-otro-cap"].forEach(id => { const el=document.getElementById(id); if(el) el.value=""; });
+  ["vt-otro-color","vt-otro-cap","vt-costo"].forEach(id => { const el=document.getElementById(id); if(el) el.value=""; });
   const hid = document.getElementById("vt-cliente");
   if (hid) hid.value = "";
   const badge = document.getElementById("vt-cliente-badge");
